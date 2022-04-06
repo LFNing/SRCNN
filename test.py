@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     #灰度化，否则保存有问题
     image.convert("L").show()
-    image.save()
+    image.sa
     sio.savemat('/Users/leeefn/PycharmProjects/imageAfterConv.mat', {'image': image})
 
     #image = image.resize((image.width // args.scale, image.height // args.scale), resample=pil_image.BICUBIC)
