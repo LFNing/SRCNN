@@ -32,7 +32,7 @@ if __name__ == '__main__':
     model.eval()
 
     #image = pil_image.open(args.image_file).convert('L')
-    image = pil_image.open(args.image_file).convert('L')
+    image = pil_image.open(args.image_file).convert('RGB')
     image = image.crop((0, 0, 300, 300))
 
     image_width = (image.width // args.scale) * args.scale
@@ -49,16 +49,12 @@ if __name__ == '__main__':
     image = np.array(image).astype(np.float64)
     image = image / np.max(image) * 255
     image = np.abs(image)
-    image = pil_image.fromarray(np.uint8(image))
-
-    #灰度化，否则保存有问题
-    image.convert("L").show()
-    image.sa
+    #image = pil_image.fromarray(np.uint8(image))
+    #咳，先都保存为mat格式，然后matlab统一绘图
     sio.savemat('/Users/leeefn/PycharmProjects/imageAfterConv.mat', {'image': image})
 
     #image = image.resize((image.width // args.scale, image.height // args.scale), resample=pil_image.BICUBIC)
     #image = image.resize((image.width * args.scale, image.height * args.scale), resample=pil_image.BICUBIC)
-
     #image = np.array(image).astype(np.float32)
 
     ycbcr = convert_rgb_to_ycbcr(image)
@@ -68,7 +64,11 @@ if __name__ == '__main__':
     y = torch.from_numpy(y).to(device)
     y = y.unsqueeze(0).unsqueeze(0)
 
+    # 在使用pytorch时，并不是所有的操作都需要进行计算图的生成（计算过程的构建，以便梯度反向传播等操作）。
+    # 而对于tensor的计算操作，默认是要进行计算图的构建的，在这种情况下，可以使用 with torch.no_grad():，
+    # 强制之后的内容不进行计算图构建。
     with torch.no_grad():
+        # torch.clamp() 将输入input张量每个元素的夹紧到区间 [min,max][min,max]，并返回结果到一个新张量。
         preds = model(y).clamp(0.0, 1.0)
 
     psnr = calc_psnr(y, preds)
@@ -78,6 +78,7 @@ if __name__ == '__main__':
 
     output = np.array([preds, ycbcr[..., 1], ycbcr[..., 2]]).transpose([1, 2, 0])
     output = np.clip(convert_ycbcr_to_rgb(output), 0.0, 255.0).astype(np.uint8)
-    output = pil_image.fromarray(output)
-    output = output.convert("L")
-    output.save('image_afterSrcnn_x{}.tif')
+    #output = pil_image.fromarray(output)
+    #output = output.convert("L")
+    #output.save('image_afterSrcnn_x{}.tif')
+    sio.savemat('/Users/leeefn/PycharmProjects/imageAfterSRCNN.mat', {'image': output})
